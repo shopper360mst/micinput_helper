@@ -1,0 +1,26 @@
+{
+  "name": "micinput_helper",
+  "version": "1.0.0",
+  "description": "Microphone input helper, will listen to the mic and output amplitude values. Useful for games.",
+  "main": "micinput_helper.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shopper360mst/micinput_helper.git"
+  },
+  "keywords": [
+    "mic",
+    "microphone",
+    "game",
+    "input",
+    "sound"
+  ],
+  "author": "shopper360",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/shopper360mst/micinput_helper/issues"
+  },
+  "homepage": "https://github.com/shopper360mst/micinput_helper#readme"
+}
