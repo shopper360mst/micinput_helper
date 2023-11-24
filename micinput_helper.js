@@ -7,7 +7,11 @@ export default class MicInput_Helper {
      * @param {dom} object for listener. if none is given it will default to window.
      * @example
      * var micInput = new MicInput_Helper();
-     * micInput.init(window);
+     * let contextOptions = {
+     *  latencyHint: 0,
+     *  sampleRate: 22050,
+     * }
+     * micInput.init(contextOptions,window);
      * or
      * micInput.init(document.body);
      * receiving side must apply;
@@ -17,9 +21,13 @@ export default class MicInput_Helper {
      *     console.log(`evt`, evt.detail.raw);
      *  });
      */
-    async init(dom) {
+    async init(contextOptions, dom) {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-        const audioContext = new AudioContext();
+        if (arguments.length == 0){
+            const audioContext = new AudioContext({latencyHint: 0}); 
+        } else {
+            const audioContext = new AudioContext(contextOptions);
+        }
         const mediaStreamAudioSourceNode = audioContext.createMediaStreamSource(stream);
         const analyserNode = audioContext.createAnalyser();
         mediaStreamAudioSourceNode.connect(analyserNode);
@@ -31,7 +39,7 @@ export default class MicInput_Helper {
             for (const amplitude of pcmData) { sumSquares += amplitude*amplitude; }
             let rawAmp = Math.sqrt(sumSquares / pcmData.length) * 1000000;
             let rawPure = Math.sqrt(sumSquares / pcmData.length);
-            if (arguments.length > 0) {
+            if (arguments.length > 1) {
                 dom.dispatchEvent(
                     new CustomEvent(
                         'amplitudeChanged',

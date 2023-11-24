@@ -1,6 +1,6 @@
 {
-  "name": "micinput_helper",
-  "version": "1.0.0",
+  "name": "@shopper360mst/micinput_helper",
+  "version": "1.0.1",
   "description": "Microphone input helper, will listen to the mic and output amplitude values. Useful for games.",
   "main": "micinput_helper.js",
   "scripts": {
