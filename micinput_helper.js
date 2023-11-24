@@ -23,10 +23,11 @@ export default class MicInput_Helper {
      */
     async init(contextOptions, dom) {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        var audioContext;
         if (arguments.length == 0){
-            const audioContext = new AudioContext({latencyHint: 0}); 
+            audioContext = new AudioContext({latencyHint: 0}); 
         } else {
-            const audioContext = new AudioContext(contextOptions);
+            audioContext = new AudioContext(contextOptions);
         }
         const mediaStreamAudioSourceNode = audioContext.createMediaStreamSource(stream);
         const analyserNode = audioContext.createAnalyser();
