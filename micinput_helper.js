@@ -2,52 +2,32 @@
 export default class MicInput_Helper {
     constructor() {        
     }
-    /**
-     * initialize the mic listener and return user the raw amplitude from mic.
-     * @param {dom} object for listener. if none is given it will default to window.
-     * @example
-     * var micInput = new MicInput_Helper();
-     * let contextOptions = {
-     *  latencyHint: 0,
-     *  sampleRate: 22050,
-     * }
-     * micInput.init(contextOptions,window);
-     * or
-     * micInput.init(document.body);
-     * receiving side must apply;
-     * 
-     *  window.addEventListener('amplitudeChanged', (evt) => {
-     *     console.log(`evt`, evt.detail.value);
-     *     console.log(`evt`, evt.detail.raw);
-     *  });
-     */
-    async init(contextOptions, dom) {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+
+    async onMicrophoneGranted(evt) {
         var audioContext;
         if (arguments.length == 0){
             audioContext = new AudioContext({latencyHint: 0}); 
         } else {
-            audioContext = new AudioContext(contextOptions);
+            audioContext = new AudioContext(this.contextOptions);
         }
-        const mediaStreamAudioSourceNode = audioContext.createMediaStreamSource(stream);
-        const analyserNode = audioContext.createAnalyser();
-        mediaStreamAudioSourceNode.connect(analyserNode);
+        await audioContext.audioWorklet.addModule('vumeter-processor.js')
+        let microphone = audioContext.createMediaStreamSource(this.stream);
+        const node = new AudioWorkletNode(audioContext, 'vumeter');
+        microphone.connect(node).connect(audioContext.destination);
 
-        const pcmData = new Float32Array(analyserNode.fftSize);
-        const onFrame = () => {
-            analyserNode.getFloatTimeDomainData(pcmData);
-            let sumSquares = 0.0;
-            for (const amplitude of pcmData) { sumSquares += amplitude*amplitude; }
-            let rawAmp = Math.sqrt(sumSquares / pcmData.length) * 1000000;
-            let rawPure = Math.sqrt(sumSquares / pcmData.length);
-            if (arguments.length > 1) {
-                dom.dispatchEvent(
+        node.port.onmessage  = event => {
+            let _volume = 0;
+            let _sensibility = 2; // Just to add any sensibility 
+            if (event.data.volume)
+                _volume = event.data.volume;
+            let rawAmp = ((_volume * 100) / _sensibility);
+            if (this.dom) {
+                this.dom.dispatchEvent(
                     new CustomEvent(
                         'amplitudeChanged',
                         {
                             detail: {
                                 value: rawAmp,
-                                raw : rawPure,
                             }
                         }
                     )
@@ -59,16 +39,57 @@ export default class MicInput_Helper {
                         {
                             detail: {
                                 value: rawAmp,
-                                raw : rawPure,
                             }
                         }
                     )
                 );
             }
+        }
+        
+    }
+    onMicrophoneDenied(evt) {
+        console.log('User denied microphone. Restart the page again to request.')
+    }
+    /**
+     * initialize the mic listener and return user the raw amplitude from mic.
+     * make sure you must attached this mic init process within a onclick event for security policy.
+     * @param {dom} object for listener. if none is given it will default to window.
+     * @example
+     * document.getElementById('someButtonId).addEventListener('click', (evt)=>{
+     *  this.micInput = new MicInput_Helper();
+     *  let contextOptions = {
+     *      latencyHint: 0,
+     *      sampleRate: 22050,
+     *  }
+     *  this.micInput.init(contextOptions, window); 
+     * }));
+     * then apply event listener;
+     * 
+     *  window.addEventListener('amplitudeChanged', (evt) => {
+     *      let multiplier = 20000;
+     *      if (evt.detail.value * multiplier) >= 50) {
+     *          console.log(`evt`, evt.detail.value);
+     *      }
+     *  });
+     */
+    async init(contextOptions, dom) {
+        try {
+            if (arguments.length > 0) {
+                this.contextOptions = contextOptions;
+            }
+            if (arguments.length > 1){
+                this.dom = dom;
+            }
+            this.stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            await navigator.getUserMedia(
+                { audio: true, video: false },
+                (evt)=>{ this.onMicrophoneGranted(evt) },
+                (err)=>{ this.onMicrophoneDenied(err) }
+            );
             
-            window.requestAnimationFrame(onFrame);
-        };
-        window.requestAnimationFrame(onFrame);
+        } catch(e) {
+            console.log(e);
+        }        
     }
     
 };
